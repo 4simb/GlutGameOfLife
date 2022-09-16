@@ -6,7 +6,8 @@
 #include "BMP.h"
 
 //#define DELAY 1
-#define SPEED 20.f
+#define SPEED 1000.f
+#define PATH "Debug/img2.bmp"
 
 float distance = -100.f;
 
@@ -27,7 +28,7 @@ std::vector<std::vector<bool>> new_field(WIDTH + 1, std::vector<bool>(HEIGHT + 1
 char cell_symbol = '#';
 char empty_cell_symbol = ' ';
 
-std::string name = "Debug/img.bmp";
+std::string name = PATH;
 std::string finish_code;
 
 std::chrono::high_resolution_clock::time_point timer_start, timer_end, step_time;
@@ -89,16 +90,38 @@ void setup() {
 	img.read((char*)&img_data[0], file_size);
 	img.close();
 
+	//field.resize(WIDTH);
+	//new_field.resize(WIDTH);
+
+	field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+	new_field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+
+	//*
 	for (int y = HEIGHT - 1; y >= 0; y--) {
 		for (int x = 0; x < WIDTH; x++) {
 			int pos = y * line_size + x / 8; // currently readable byte
 			int bit = 1 << (7 - x % 8);
 			//std::cout << "Import " << name << "  size: " << img_data.size() << '\t' << "  byte n:  " << pos << '\n';
 			//std::cout << img_data.size() << '\t' << pos << '\t' << (int)img_data[pos] << '\n'; //1695, 3rd iter - fail
+			//
 			int pixel = !((img_data[pos] & bit) > 0); // 1 - black, 0 - white
 			field[x][HEIGHT - y - 1] = pixel;
 		}
 	}
+	/*/
+	/*
+	for (int y = 0; y < HEIGHT; y++) {
+		for (int x = 0; x < WIDTH; x++) {
+			int pos = y * line_size + x / 8; // currently readable byte
+			int bit = 1 << (7 - x % 8);
+			//std::cout << "Import " << name << "  size: " << img_data.size() << '\t' << "  byte n:  " << pos << '\n';
+			//std::cout << img_data.size() << '\t' << pos << '\t' << (int)img_data[pos] << '\n'; //1695, 3rd iter - fail
+			//
+			int pixel = !((img_data[pos] & bit) > 0); // 1 - black, 0 - white
+			field[x][HEIGHT] = pixel;
+		}
+	}
+	//*/
 
 	timer_start = timer_end = step_time = std::chrono::high_resolution_clock::now();
 }
@@ -218,8 +241,8 @@ int main(int argc, char** argv) {
 	if (argc > 1)name = argv[1];
 	setup();
 
-	std::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-	std::vector<std::vector<bool>> new_field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+	//td::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+	//std::vector<std::vector<bool>> new_field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 
 	// основной цикл
 	glutMainLoop();
