@@ -13,11 +13,11 @@
 #define KEY_ESC 27
 #define KEY_ENTER 13
 
-#define SPEED 60.f
-#define PATH "img.bmp"
+#define PATH "img2.bmp"
 
 float distance = -100.f;
 
+float SPEED = 60.f;
 int WIDTH = 120;
 int HEIGHT = 39;
 
@@ -28,7 +28,7 @@ int rightOffset = 250;
 float gridSize;
 
 static int frame;
-int FPS = 0;
+float FPS = 0.f;
 long int elapsedTime = 0;
 
 bool pause = false, lastPause = true;
@@ -232,10 +232,8 @@ void renderScene(void) {
 	static int alive;
 
 	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
-		if (!pause) {
-			alive = fieldAnalyse();
-			step_time = timer_end;
-		}
+		if (!pause) alive = fieldAnalyse();
+		step_time = timer_end;
 	} else return;
 	
 	if (alive == 0) {
