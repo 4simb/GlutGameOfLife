@@ -1,4 +1,5 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
+//#define DEBUG
 
 #include <iostream>
 #include <chrono>
@@ -34,6 +35,7 @@ long int elapsedTime = 0;
 std::vector<float> FPSs;
 
 bool pause = false, lastPause = true;
+bool erase = false;
 
 std::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 std::vector<std::vector<bool>> newField(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
@@ -95,10 +97,64 @@ void processNormalKeys(unsigned char key, int x, int y) {
 		//pause = !pause;
 	if (key == KEY_SPACE) {
 		pause = !pause;
-	} else if (key == 'z') {
+	} else if (key == 'x' || key == 'X') {
 		if (SPEED > 1) SPEED -= 1;
-	} else if (key == 'x') {
+	} else if (key == 'z' || key == 'Z') {
 		if (SPEED < 240) SPEED += 1;
+	} else if (key == 'c' || key == 'C') {
+		// clear the whole field
+		for (int x = 0; x < WIDTH; x++) {
+			for (int y = 0; y < HEIGHT; y++) {
+				field[x][y] = 0;
+			}
+		}
+#ifdef DEBUG
+		std::cout << "Field cleared.";
+#endif
+	}
+}
+
+void processMouse(int button, int state, int x, int y) {
+	if (button == GLUT_RIGHT_BUTTON) {
+		if (state == GLUT_DOWN) {
+			erase = true;
+
+			int fieldX = (float)x / gridSize;
+			int fieldY = (float)y / gridSize;
+			field[fieldX][fieldY] = 0;
+		} else erase = false;
+	} else if (button == GLUT_LEFT_BUTTON) {
+		if (state == GLUT_UP) {
+			int fieldX = (float)x / gridSize;
+			int fieldY = (float)y / gridSize;
+			field[fieldX][fieldY] = 1;
+		}
+	}
+#ifdef DEBUG
+	std::cout << "Erase: " << erase << "\n";
+#endif
+}
+
+void processMouseMotion(int x, int y) {
+	int fieldX = (float)x / gridSize;
+	int fieldY = (float)y / gridSize;
+
+#ifdef DEBUG
+	std::cout << fieldX << "  " << fieldY << "\n";
+#endif
+
+	if (fieldX > WIDTH || fieldY > HEIGHT) return;
+	
+	if (erase) { // delete cells
+		field[fieldX][fieldY] = 0;
+#ifdef DEBUG
+		std::cout << "Erase cell " << fieldX << " " << fieldY << "\n";
+#endif
+	} else { // set cells
+		field[fieldX][fieldY] = 1;
+#ifdef DEBUG
+		std::cout << "Draw cell " << fieldX << " " << fieldY << "\n";
+#endif
 	}
 }
 
@@ -246,11 +302,13 @@ void renderScene(void) {
 	timer_end = std::chrono::high_resolution_clock::now();
 	static int alive = 1;
 
+	/*
 	if (alive == 0) {
 		finishCode = "Everyone died.";
 		std::cout << finishCode << "\n";
 		return;
 	}
+	//*/
 
 	// очистка буфера цвета и глубины
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -261,7 +319,7 @@ void renderScene(void) {
 	glColor3f(0.15, 0.15, 0.15);
 	glLineWidth(1);
 
-	drawField();
+	drawField(); // 7ms
 
 	glColor3f(1.0, 1.0, 1.0);
 
@@ -273,13 +331,13 @@ void renderScene(void) {
 	drawString(WIDTH * gridSize + 20, winHeight - 180, -1, "Alive: " + std::to_string(alive));
 	drawString(WIDTH * gridSize + 20, winHeight - 210, -1, std::string("Pause: ") + (pause ? "ON" : "OFF"));
 
-	drawString(10, winHeight - gridSize * HEIGHT - 25, -1, "Z: -FPS  X: +FPS");
-
+	drawString(10, winHeight - gridSize * HEIGHT - 25, -1, "Z: +FPS  X: -FPS  C: Clear  Space: Pause");
+	// +7ms
 	glutSwapBuffers();
 
 	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
 		if (!pause) {
-			alive = fieldAnalyse();
+			alive = fieldAnalyse(); // 33ms
 			frame++;
 		}
 		step_time = timer_end;
@@ -304,6 +362,9 @@ int main(int argc, char** argv) {
 	glutReshapeFunc(changeSize);
 	glutIdleFunc(renderScene);
 	glutKeyboardFunc(processNormalKeys);
+	glutMouseFunc(processMouse);
+	glutMotionFunc(processMouseMotion);
+	//glutKeyboardUpFunc(processNormalKeys);
 
 	if (argc > 1)name = argv[1];
 	setup();

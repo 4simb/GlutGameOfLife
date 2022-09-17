@@ -1,3 +1,5 @@
-1. pause/unpause on space -- DONE
-2. change cells with mouse
-3. change field sizes from text fields
+change cells with mouse
+Optimize fieldAnalyse() (m.b. using threads)
+change field sizes from text fields
+
+pause/unpause on space -- DONE
