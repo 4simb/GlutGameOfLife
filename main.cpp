@@ -3,13 +3,14 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+#include <string>
 #include <Windows.h>
 #include <GL/glut.h>  // GLUT, include glu.h and gl.h
 #include "BMP.h"
 
 //#define DELAY 1
 #define SPEED 60.f
-#define PATH "Debug/img2.bmp"
+#define PATH "Debug/img3.bmp"
 
 float distance = -100.f;
 
@@ -86,44 +87,57 @@ void drawString(float x, float y, float z, char* string) {
 	}
 }
 
-void setup() {
-	BMP BMPfield(name);
-	//if (BMPfield.get_heigt() != HEIGHT || BMPfield.get_width() != WIDTH) throw std::runtime_error("Error! Invalid size of BMP image.");
-	WIDTH = BMPfield.get_width();
-	HEIGHT = BMPfield.get_heigt();
-	int line_size = BMPfield.get_bytes_per_raw();
-	int file_size = line_size * HEIGHT;
-
-	std::ifstream img{ name, std::ios_base::binary };
-
-	if (!img.good()) throw std::runtime_error("Error! Couldn't open the file.");
-
-	img.seekg(0x3e); // 62 bytes, start of pixels info
-
-	std::vector<unsigned char> img_data(file_size);
-
-	img.read((char*)&img_data[0], file_size);
-	img.close();
-
-	//field.resize(WIDTH);
-	//new_field.resize(WIDTH);
-
-	field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-	new_field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-
-	//*
-	for (int y = HEIGHT - 1; y >= 0; y--) {
-		for (int x = 0; x < WIDTH; x++) {
-			int pos = y * line_size + x / 8; // currently readable byte
-			int bit = 1 << (7 - x % 8);
-			//std::cout << "Import " << name << "  size: " << img_data.size() << '\t' << "  byte n:  " << pos << '\n';
-			//std::cout << img_data.size() << '\t' << pos << '\t' << (int)img_data[pos] << '\n'; //1695, 3rd iter - fail
-			//
-			int pixel = !((img_data[pos] & bit) > 0); // 1 - black, 0 - white
-			field[x][HEIGHT - y - 1] = pixel;
-		}
+void drawString(float x, float y, float z, std::string string) {
+	glRasterPos3f(crdX(x), crdY(y), z);
+	for (int c = 0; string[c] != '\0'; c++) {
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, string[c]);  // Updates the position
 	}
-	//*/
+}
+
+void setup() {
+	try {
+		BMP BMPfield(name);
+		//if (BMPfield.get_heigt() != HEIGHT || BMPfield.get_width() != WIDTH) throw std::runtime_error("Error! Invalid size of BMP image.");
+		WIDTH = BMPfield.get_width();
+		HEIGHT = BMPfield.get_heigt();
+		int line_size = BMPfield.get_bytes_per_raw();
+		int file_size = line_size * HEIGHT;
+
+		std::ifstream img{ name, std::ios_base::binary };
+
+		if (!img.good()) throw std::runtime_error("Error! Couldn't open the file.");
+
+		img.seekg(0x3e); // 62 bytes, start of pixels info
+
+		std::vector<unsigned char> img_data(file_size);
+
+		img.read((char*)&img_data[0], file_size);
+		img.close();
+
+
+		//field.resize(WIDTH);
+		//new_field.resize(WIDTH);
+
+		field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+		new_field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+
+		//*
+		for (int y = HEIGHT - 1; y >= 0; y--) {
+			for (int x = 0; x < WIDTH; x++) {
+				int pos = y * line_size + x / 8; // currently readable byte
+				int bit = 1 << (7 - x % 8);
+				//std::cout << "Import " << name << "  size: " << img_data.size() << '\t' << "  byte n:  " << pos << '\n';
+				//std::cout << img_data.size() << '\t' << pos << '\t' << (int)img_data[pos] << '\n'; //1695, 3rd iter - fail
+				//
+				int pixel = !((img_data[pos] & bit) > 0); // 1 - black, 0 - white
+				field[x][HEIGHT - y - 1] = pixel;
+			}
+		}
+		//*/
+	} catch (std::runtime_error err) {
+		std::cout << err.what();
+		glutDestroyWindow(1);
+	}
 
 	timer_start = timer_end = step_time = std::chrono::high_resolution_clock::now();
 }
@@ -219,15 +233,12 @@ void renderScene(void) {
 	draw_field();
 
 	glColor3f(1.0, 1.0, 1.0);
-	char chFPS[6];
-	char chFrame[10];
-	_itoa(FPS, chFPS, 10);
-	_itoa(frame, chFrame, 10);
-	drawString(WIDTH * grid_size + 20, winHeight - 30, -1, "FPS: ");
-	drawString(WIDTH * grid_size + 75, winHeight - 30, -1, chFPS);
 
-	drawString(WIDTH * grid_size + 20, winHeight - 60, -1, "Frame:");
-	drawString(WIDTH * grid_size + 100, winHeight - 60, -1, chFrame);
+	drawString(WIDTH * grid_size + 20, winHeight - 30, -1, "Elapsed time: " + std::to_string(elapsed_time/1000) + " ms");
+	drawString(WIDTH * grid_size + 20, winHeight - 60, -1, "FPS: " + std::to_string(FPS));
+	drawString(WIDTH * grid_size + 20, winHeight - 90, -1, "Frame: " + std::to_string(frame));
+	drawString(WIDTH * grid_size + 20, winHeight - 120, -1, "Field size: " + std::to_string(WIDTH * HEIGHT));
+	drawString(WIDTH * grid_size + 20, winHeight - 150, -1, "Alive: " + std::to_string(alive));
 
 	glutSwapBuffers();
 

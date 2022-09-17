@@ -97,12 +97,10 @@ struct BMP {
             file_header.file_size = file_header.offset_data;
 
             if (bmp_info_header.height < 0) {
-                throw std::runtime_error("The program can treat only BMP images with the origin in the bottom left corner!");
-            }
-
-            
+                throw std::runtime_error("Error! The program can treat only BMP images with the origin in the bottom left corner.");
+            }  
         } else {
-            throw std::runtime_error("Unable to open the input image file.");
+            throw std::runtime_error("Error! Unable to open " + fname);
         }
     }
 
