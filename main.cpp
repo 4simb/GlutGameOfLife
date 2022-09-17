@@ -1,4 +1,6 @@
-﻿#include <iostream>
+﻿#define _CRT_SECURE_NO_WARNINGS
+
+#include <iostream>
 #include <chrono>
 #include <vector>
 #include <Windows.h>
@@ -6,7 +8,7 @@
 #include "BMP.h"
 
 //#define DELAY 1
-#define SPEED 1000.f
+#define SPEED 60.f
 #define PATH "Debug/img2.bmp"
 
 float distance = -100.f;
@@ -22,11 +24,10 @@ static int frame;
 int FPS = 0;
 long int elapsed_time = 0;
 
+bool pause = false;
+
 std::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 std::vector<std::vector<bool>> new_field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-
-char cell_symbol = '#';
-char empty_cell_symbol = ' ';
 
 std::string name = PATH;
 std::string finish_code;
@@ -71,6 +72,20 @@ void changeSize(int w, int h) {
 	*/
 }
 
+void drawString(float x, float y, float z, const char* string) {
+	glRasterPos3f(crdX(x), crdY(y), z);
+	for (const char* c = string; *c != '\0'; c++) {
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);  // Updates the position
+	}
+}
+
+void drawString(float x, float y, float z, char* string) {
+	glRasterPos3f(crdX(x), crdY(y), z);
+	for (char* c = string; *c != '\0'; c++) {
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);  // Updates the position
+	}
+}
+
 void setup() {
 	BMP BMPfield(name);
 	//if (BMPfield.get_heigt() != HEIGHT || BMPfield.get_width() != WIDTH) throw std::runtime_error("Error! Invalid size of BMP image.");
@@ -108,26 +123,13 @@ void setup() {
 			field[x][HEIGHT - y - 1] = pixel;
 		}
 	}
-	/*/
-	/*
-	for (int y = 0; y < HEIGHT; y++) {
-		for (int x = 0; x < WIDTH; x++) {
-			int pos = y * line_size + x / 8; // currently readable byte
-			int bit = 1 << (7 - x % 8);
-			//std::cout << "Import " << name << "  size: " << img_data.size() << '\t' << "  byte n:  " << pos << '\n';
-			//std::cout << img_data.size() << '\t' << pos << '\t' << (int)img_data[pos] << '\n'; //1695, 3rd iter - fail
-			//
-			int pixel = !((img_data[pos] & bit) > 0); // 1 - black, 0 - white
-			field[x][HEIGHT] = pixel;
-		}
-	}
 	//*/
 
 	timer_start = timer_end = step_time = std::chrono::high_resolution_clock::now();
 }
 
 void draw_field() {
-	grid_size = min((float)winWidth / (float)WIDTH, (float)winHeight / (float)HEIGHT);
+	grid_size = min((float)(winWidth - 200) / (float)WIDTH, (float)winHeight / (float)HEIGHT);
 
 	for (int y = 0; y < HEIGHT; y++) {
 		glBegin(GL_LINE_STRIP);
@@ -159,6 +161,7 @@ void draw_field() {
 	glPoint(0, HEIGHT * grid_size);
 	glPoint(WIDTH * grid_size, HEIGHT * grid_size);
 	glEnd();
+
 }
 // game step
 int field_analyse() {
@@ -195,9 +198,9 @@ void renderScene(void) {
 	static int alive;
 
 	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
-		 alive = field_analyse();
-		 step_time = timer_end;
-	}
+		alive = field_analyse();
+		step_time = timer_end;
+	} else return;
 	
 	if (alive == 0) {
 		finish_code = "Everyone died.";
@@ -214,6 +217,17 @@ void renderScene(void) {
 	glLineWidth(1);
 
 	draw_field();
+
+	glColor3f(1.0, 1.0, 1.0);
+	char chFPS[6];
+	char chFrame[10];
+	_itoa(FPS, chFPS, 10);
+	_itoa(frame, chFrame, 10);
+	drawString(WIDTH * grid_size + 20, winHeight - 30, -1, "FPS: ");
+	drawString(WIDTH * grid_size + 75, winHeight - 30, -1, chFPS);
+
+	drawString(WIDTH * grid_size + 20, winHeight - 60, -1, "Frame:");
+	drawString(WIDTH * grid_size + 100, winHeight - 60, -1, chFrame);
 
 	glutSwapBuffers();
 
