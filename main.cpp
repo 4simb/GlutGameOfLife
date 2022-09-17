@@ -23,13 +23,15 @@ int HEIGHT = 39;
 
 int winWidth = 1900, winHeight = 980;
 
-int rightOffset = 250;
+int rightOffset = 250, downOffset = 30;
 
 float gridSize;
 
 static int frame;
 float FPS = 0.f;
 long int elapsedTime = 0;
+
+std::vector<float> FPSs;
 
 bool pause = false, lastPause = true;
 
@@ -55,6 +57,15 @@ float crdY(float coord) {
 
 void glPoint(float x, float y) {
 	glVertex3f(crdX(x), -crdY(y), -1);
+}
+
+template<typename T>
+float sum(T const& xs) {
+	float s = 0.f;
+	for (auto const& x : xs) {
+		s += x;
+	}
+	return s;
 }
 
 void changeSize(int w, int h) {
@@ -167,7 +178,7 @@ void setup() {
 }
 
 void drawField() {
-	gridSize = min((float)(winWidth - rightOffset) / (float)WIDTH, (float)winHeight / (float)HEIGHT);
+	gridSize = min((float)(winWidth - rightOffset) / (float)WIDTH, (float)(winHeight - downOffset) / (float)HEIGHT);
 
 	for (int y = 0; y < HEIGHT; y++) {
 		glBegin(GL_LINE_STRIP);
@@ -233,16 +244,8 @@ int fieldAnalyse() {
 
 void renderScene(void) {
 	timer_end = std::chrono::high_resolution_clock::now();
-	static int alive;
+	static int alive = 1;
 
-	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
-		if (!pause) {
-			alive = fieldAnalyse();
-			frame++;
-		}
-		step_time = timer_end;
-	} else return;
-	
 	if (alive == 0) {
 		finishCode = "Everyone died.";
 		std::cout << finishCode << "\n";
@@ -264,20 +267,31 @@ void renderScene(void) {
 
 	drawString(WIDTH * gridSize + 20, winHeight - 30, -1, "Elapsed time: " + std::to_string(elapsedTime/1000) + " ms");
 	drawString(WIDTH * gridSize + 20, winHeight - 60, -1, "FPS: " + std::to_string(FPS));
-	drawString(WIDTH * gridSize + 20, winHeight - 90, -1, "Frame: " + std::to_string(frame));
-	drawString(WIDTH * gridSize + 20, winHeight - 120, -1, "Field size: " + std::to_string(WIDTH * HEIGHT));
-	drawString(WIDTH * gridSize + 20, winHeight - 150, -1, "Alive: " + std::to_string(alive));
-	drawString(WIDTH * gridSize + 20, winHeight - 180, -1, std::string("Pause: ") + (pause ? "ON" : "OFF"));
+	drawString(WIDTH * gridSize + 20, winHeight - 90, -1, "Max FPS: " + std::to_string((int)SPEED));
+	drawString(WIDTH * gridSize + 20, winHeight - 120, -1, "Frame: " + std::to_string(frame));
+	drawString(WIDTH * gridSize + 20, winHeight - 150, -1, "Field size: " + std::to_string(WIDTH * HEIGHT));
+	drawString(WIDTH * gridSize + 20, winHeight - 180, -1, "Alive: " + std::to_string(alive));
+	drawString(WIDTH * gridSize + 20, winHeight - 210, -1, std::string("Pause: ") + (pause ? "ON" : "OFF"));
+
+	drawString(10, winHeight - gridSize * HEIGHT - 25, -1, "Z: -FPS  X: +FPS");
 
 	glutSwapBuffers();
 
+	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
+		if (!pause) {
+			alive = fieldAnalyse();
+			frame++;
+		}
+		step_time = timer_end;
+	} else return;
+
 	elapsedTime = (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - timer_start).count());
-	FPS = 1e6 / elapsedTime;
+	FPS = 1e6f / elapsedTime;
+
 	timer_start = timer_end;
 }
 
 int main(int argc, char** argv) {
-
 	// Инициализация GLUT и создание окна
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -294,8 +308,8 @@ int main(int argc, char** argv) {
 	if (argc > 1)name = argv[1];
 	setup();
 
-	//td::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-	//std::vector<std::vector<bool>> newField(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+	FPSs.resize(3);
+	FPSs = { 0.f, 0.f, 0.f };
 
 	// основной цикл
 	glutMainLoop();
