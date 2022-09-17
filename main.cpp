@@ -10,7 +10,7 @@
 
 //#define DELAY 1
 #define SPEED 60.f
-#define PATH "Debug/img3.bmp"
+#define PATH "img.bmp"
 
 float distance = -100.f;
 
@@ -19,19 +19,21 @@ int HEIGHT = 39;
 
 int winWidth = 1900, winHeight = 980;
 
-float grid_size;
+int rightOffset = 250;
+
+float gridSize;
 
 static int frame;
 int FPS = 0;
-long int elapsed_time = 0;
+long int elapsedTime = 0;
 
 bool pause = false;
 
 std::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-std::vector<std::vector<bool>> new_field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+std::vector<std::vector<bool>> newField(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 
 std::string name = PATH;
-std::string finish_code;
+std::string finishCode;
 
 std::chrono::high_resolution_clock::time_point timer_start, timer_end, step_time;
 
@@ -116,10 +118,10 @@ void setup() {
 
 
 		//field.resize(WIDTH);
-		//new_field.resize(WIDTH);
+		//newField.resize(WIDTH);
 
 		field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-		new_field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+		newField = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 
 		//*
 		for (int y = HEIGHT - 1; y >= 0; y--) {
@@ -143,37 +145,37 @@ void setup() {
 }
 
 void draw_field() {
-	grid_size = min((float)(winWidth - 200) / (float)WIDTH, (float)winHeight / (float)HEIGHT);
+	gridSize = min((float)(winWidth - rightOffset) / (float)WIDTH, (float)winHeight / (float)HEIGHT);
 
 	for (int y = 0; y < HEIGHT; y++) {
 		glBegin(GL_LINE_STRIP);
-		glPoint(0, y * grid_size);
-		glPoint(WIDTH * grid_size, y * grid_size);
+		glPoint(0, y * gridSize);
+		glPoint(WIDTH * gridSize, y * gridSize);
 		glEnd();
 
 		for (int x = 0; x < WIDTH; x++) {
 			glBegin(GL_LINE_STRIP);
-			glPoint(x * grid_size, 0);
-			glPoint(x * grid_size, HEIGHT * grid_size);
+			glPoint(x * gridSize, 0);
+			glPoint(x * gridSize, HEIGHT * gridSize);
 			glEnd();
 
 			if (field[x][y]) {
 				glColor3f(0.5, 0.5, 0.5);
 				glBegin(GL_QUADS);
-				glPoint(((float)x + 0.1) * grid_size, ((float)y + 0.1) * grid_size);
-				glPoint(((float)x + 0.9) * grid_size, ((float)y + 0.1) * grid_size);
-				glPoint(((float)x + 0.9) * grid_size, ((float)y + 0.9) * grid_size);
-				glPoint(((float)x + 0.1) * grid_size, ((float)y + 0.9) * grid_size);
+				glPoint(((float)x + 0.1) * gridSize, ((float)y + 0.1) * gridSize);
+				glPoint(((float)x + 0.9) * gridSize, ((float)y + 0.1) * gridSize);
+				glPoint(((float)x + 0.9) * gridSize, ((float)y + 0.9) * gridSize);
+				glPoint(((float)x + 0.1) * gridSize, ((float)y + 0.9) * gridSize);
 				glEnd();	
 			}
 			glColor3f(0.15, 0.15, 0.15);
 		}
 	}
 	glBegin(GL_LINE_STRIP);
-	glPoint(WIDTH * grid_size, 0);
-	glPoint(WIDTH * grid_size, HEIGHT * grid_size);
-	glPoint(0, HEIGHT * grid_size);
-	glPoint(WIDTH * grid_size, HEIGHT * grid_size);
+	glPoint(WIDTH * gridSize, 0);
+	glPoint(WIDTH * gridSize, HEIGHT * gridSize);
+	glPoint(0, HEIGHT * gridSize);
+	glPoint(WIDTH * gridSize, HEIGHT * gridSize);
 	glEnd();
 
 }
@@ -193,16 +195,16 @@ int field_analyse() {
 			if (field[(x + 1) % WIDTH][(y + 1) % HEIGHT] == 1) neighbors++;					 //  (2, 2)
 
 			if (field[x][y] == 0 && neighbors == 3) { // newborn
-				new_field[x][y] = 1;
+				newField[x][y] = 1;
 				alive++;
 			} else if (field[x][y] == 1 && (neighbors == 2 || neighbors == 3)) { // still alive
-				new_field[x][y] = 1;
+				newField[x][y] = 1;
 				alive++;
-			} else new_field[x][y] = 0; // die
+			} else newField[x][y] = 0; // die
 		}
 	}
 
-	field = new_field;
+	field = newField;
 
 	return alive;
 }
@@ -217,7 +219,7 @@ void renderScene(void) {
 	} else return;
 	
 	if (alive == 0) {
-		finish_code = "Everyone died.";
+		finishCode = "Everyone died.";
 		return;
 	}
 
@@ -234,18 +236,18 @@ void renderScene(void) {
 
 	glColor3f(1.0, 1.0, 1.0);
 
-	drawString(WIDTH * grid_size + 20, winHeight - 30, -1, "Elapsed time: " + std::to_string(elapsed_time/1000) + " ms");
-	drawString(WIDTH * grid_size + 20, winHeight - 60, -1, "FPS: " + std::to_string(FPS));
-	drawString(WIDTH * grid_size + 20, winHeight - 90, -1, "Frame: " + std::to_string(frame));
-	drawString(WIDTH * grid_size + 20, winHeight - 120, -1, "Field size: " + std::to_string(WIDTH * HEIGHT));
-	drawString(WIDTH * grid_size + 20, winHeight - 150, -1, "Alive: " + std::to_string(alive));
+	drawString(WIDTH * gridSize + 20, winHeight - 30, -1, "Elapsed time: " + std::to_string(elapsedTime/1000) + " ms");
+	drawString(WIDTH * gridSize + 20, winHeight - 60, -1, "FPS: " + std::to_string(FPS));
+	drawString(WIDTH * gridSize + 20, winHeight - 90, -1, "Frame: " + std::to_string(frame));
+	drawString(WIDTH * gridSize + 20, winHeight - 120, -1, "Field size: " + std::to_string(WIDTH * HEIGHT));
+	drawString(WIDTH * gridSize + 20, winHeight - 150, -1, "Alive: " + std::to_string(alive));
 
 	glutSwapBuffers();
 
 	frame++;
 
-	elapsed_time = (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - timer_start).count());
-	FPS = 1e6 / elapsed_time;
+	elapsedTime = (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - timer_start).count());
+	FPS = 1e6 / elapsedTime;
 	timer_start = timer_end;
 }
 
@@ -267,7 +269,7 @@ int main(int argc, char** argv) {
 	setup();
 
 	//td::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-	//std::vector<std::vector<bool>> new_field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+	//std::vector<std::vector<bool>> newField(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 
 	// основной цикл
 	glutMainLoop();
