@@ -64,6 +64,10 @@ struct BMP {
             }
             inp.read((char*)&bmp_info_header, sizeof(bmp_info_header));
 
+            // size handling
+            if (bmp_info_header.width < 4 || bmp_info_header.height < 4) throw std::runtime_error("Error! The image is too small. The image shouldn't be smaller than 4x4.");
+            if (bmp_info_header.width > 1024 || bmp_info_header.height > 1024) throw std::runtime_error("Error! The image is too big. The image shouldn't be bigger than 1024x1024.");
+
             // The BMPColorHeader is used only for transparent images
             /*
             if (bmp_info_header.bit_count == 32) {
@@ -92,9 +96,9 @@ struct BMP {
                 file_header.offset_data = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + sizeof(BMPColorHeader);
             } else {
                 bmp_info_header.size = sizeof(BMPInfoHeader);
-                file_header.offset_data = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader);
+                //file_header.offset_data = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader);
             }
-            file_header.file_size = file_header.offset_data;
+            file_header.file_size = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader);
 
             if (bmp_info_header.height < 0) {
                 throw std::runtime_error("Error! The program can treat only BMP images with the origin in the bottom left corner.");

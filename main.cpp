@@ -9,6 +9,10 @@
 #include "BMP.h"
 
 //#define DELAY 1
+#define KEY_SPACE 32
+#define KEY_ESC 27
+#define KEY_ENTER 13
+
 #define SPEED 60.f
 #define PATH "img.bmp"
 
@@ -27,7 +31,7 @@ static int frame;
 int FPS = 0;
 long int elapsedTime = 0;
 
-bool pause = false;
+bool pause = false, lastPause = true;
 
 std::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 std::vector<std::vector<bool>> newField(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
@@ -75,6 +79,14 @@ void changeSize(int w, int h) {
 	*/
 }
 
+void processNormalKeys(unsigned char key, int x, int y) {
+	//if (key == 13)
+		//pause = !pause;
+	if (key == KEY_SPACE) {
+		pause = !pause;
+	}
+}
+
 void drawString(float x, float y, float z, const char* string) {
 	glRasterPos3f(crdX(x), crdY(y), z);
 	for (const char* c = string; *c != '\0'; c++) {
@@ -99,26 +111,32 @@ void drawString(float x, float y, float z, std::string string) {
 void setup() {
 	try {
 		BMP BMPfield(name);
+		std::cout << "Importing " + name + ".\n";
 		//if (BMPfield.get_heigt() != HEIGHT || BMPfield.get_width() != WIDTH) throw std::runtime_error("Error! Invalid size of BMP image.");
 		WIDTH = BMPfield.get_width();
 		HEIGHT = BMPfield.get_heigt();
-		int line_size = BMPfield.get_bytes_per_raw();
-		int file_size = line_size * HEIGHT;
+
+		std::cout << "Image sizes{ width: " << WIDTH << "; height: " << HEIGHT << " }\n";
+
+		int lineSize = BMPfield.get_bytes_per_raw();
+		int fileSize = lineSize * HEIGHT;
+
+		std::cout << "line size: " << lineSize << "; file size: " << fileSize << "\n";
 
 		std::ifstream img{ name, std::ios_base::binary };
 
-		if (!img.good()) throw std::runtime_error("Error! Couldn't open the file.");
+		if (!img.good()) throw std::runtime_error("Error! Couldn't open " + name + " in binary mode.");
 
-		img.seekg(0x3e); // 62 bytes, start of pixels info
+		img.seekg(BMPfield.file_header.offset_data); // 0x3e (62) bytes, start of pixels info
+		//img.seekg(0x3e); // 0x3e (62) bytes, start of pixels info
 
-		std::vector<unsigned char> img_data(file_size);
+		std::vector<unsigned char> imgData(fileSize);
 
-		img.read((char*)&img_data[0], file_size);
+		img.read((char*)&imgData[0], fileSize);
+		std::cout << "Writen " << fileSize << " bytes to imgData.\n";
+
 		img.close();
-
-
-		//field.resize(WIDTH);
-		//newField.resize(WIDTH);
+		std::cout << "Import is completed.\n";
 
 		field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
 		newField = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
@@ -126,25 +144,25 @@ void setup() {
 		//*
 		for (int y = HEIGHT - 1; y >= 0; y--) {
 			for (int x = 0; x < WIDTH; x++) {
-				int pos = y * line_size + x / 8; // currently readable byte
+				int pos = y * lineSize + x / 8; // currently readable byte
 				int bit = 1 << (7 - x % 8);
-				//std::cout << "Import " << name << "  size: " << img_data.size() << '\t' << "  byte n:  " << pos << '\n';
-				//std::cout << img_data.size() << '\t' << pos << '\t' << (int)img_data[pos] << '\n'; //1695, 3rd iter - fail
+				//std::cout << "Import " << name << "  size: " << imgData.size() << '\t' << "  byte n:  " << pos << '\n';
+				//std::cout << imgData.size() << '\t' << pos << '\t' << (int)imgData[pos] << '\n'; //1695, 3rd iter - fail
 				//
-				int pixel = !((img_data[pos] & bit) > 0); // 1 - black, 0 - white
+				int pixel = !((imgData[pos] & bit) > 0); // 1 - black, 0 - white
 				field[x][HEIGHT - y - 1] = pixel;
 			}
 		}
 		//*/
 	} catch (std::runtime_error err) {
-		std::cout << err.what();
+		std::cout << err.what() << '\n';
 		glutDestroyWindow(1);
 	}
 
 	timer_start = timer_end = step_time = std::chrono::high_resolution_clock::now();
 }
 
-void draw_field() {
+void drawField() {
 	gridSize = min((float)(winWidth - rightOffset) / (float)WIDTH, (float)winHeight / (float)HEIGHT);
 
 	for (int y = 0; y < HEIGHT; y++) {
@@ -180,7 +198,7 @@ void draw_field() {
 
 }
 // game step
-int field_analyse() {
+int fieldAnalyse() {
 	int alive = 0;
 	for (int y = 0; y < HEIGHT; y++) {
 		for (int x = 0; x < WIDTH; x++) {
@@ -214,12 +232,15 @@ void renderScene(void) {
 	static int alive;
 
 	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
-		alive = field_analyse();
-		step_time = timer_end;
+		if (!pause) {
+			alive = fieldAnalyse();
+			step_time = timer_end;
+		}
 	} else return;
 	
 	if (alive == 0) {
 		finishCode = "Everyone died.";
+		std::cout << finishCode << "\n";
 		return;
 	}
 
@@ -232,7 +253,7 @@ void renderScene(void) {
 	glColor3f(0.15, 0.15, 0.15);
 	glLineWidth(1);
 
-	draw_field();
+	drawField();
 
 	glColor3f(1.0, 1.0, 1.0);
 
@@ -241,6 +262,7 @@ void renderScene(void) {
 	drawString(WIDTH * gridSize + 20, winHeight - 90, -1, "Frame: " + std::to_string(frame));
 	drawString(WIDTH * gridSize + 20, winHeight - 120, -1, "Field size: " + std::to_string(WIDTH * HEIGHT));
 	drawString(WIDTH * gridSize + 20, winHeight - 150, -1, "Alive: " + std::to_string(alive));
+	drawString(WIDTH * gridSize + 20, winHeight - 180, -1, std::string("Pause: ") + (pause ? "ON" : "OFF"));
 
 	glutSwapBuffers();
 
@@ -264,6 +286,7 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
 	glutIdleFunc(renderScene);
+	glutKeyboardFunc(processNormalKeys);
 
 	if (argc > 1)name = argv[1];
 	setup();
