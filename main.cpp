@@ -13,7 +13,7 @@
 #define KEY_ESC 27
 #define KEY_ENTER 13
 
-#define PATH "img2.bmp"
+#define PATH "img.bmp"
 
 float distance = -100.f;
 
@@ -84,6 +84,10 @@ void processNormalKeys(unsigned char key, int x, int y) {
 		//pause = !pause;
 	if (key == KEY_SPACE) {
 		pause = !pause;
+	} else if (key == 'z') {
+		if (SPEED > 1) SPEED -= 1;
+	} else if (key == 'x') {
+		if (SPEED < 240) SPEED += 1;
 	}
 }
 
@@ -232,7 +236,10 @@ void renderScene(void) {
 	static int alive;
 
 	if (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - step_time).count() > 1e6f / SPEED) {
-		if (!pause) alive = fieldAnalyse();
+		if (!pause) {
+			alive = fieldAnalyse();
+			frame++;
+		}
 		step_time = timer_end;
 	} else return;
 	
@@ -263,8 +270,6 @@ void renderScene(void) {
 	drawString(WIDTH * gridSize + 20, winHeight - 180, -1, std::string("Pause: ") + (pause ? "ON" : "OFF"));
 
 	glutSwapBuffers();
-
-	frame++;
 
 	elapsedTime = (std::chrono::duration_cast<std::chrono::microseconds>(timer_end - timer_start).count());
 	FPS = 1e6 / elapsedTime;
