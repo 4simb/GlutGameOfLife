@@ -269,7 +269,7 @@ void drawField() {
 
 }
 // game step
-int fieldAnalyse() {
+int oldFieldAnalyse() { // TO OPTIMIZE
 	int alive = 0;
 	for (int y = 0; y < HEIGHT; y++) {
 		for (int x = 0; x < WIDTH; x++) {
@@ -282,6 +282,30 @@ int fieldAnalyse() {
 			if (field[(x + 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] == 1) neighbors++;		 //  (2, 0)
 			if (field[(x + 1) % WIDTH][y] == 1) neighbors++;								 //  (2, 1)
 			if (field[(x + 1) % WIDTH][(y + 1) % HEIGHT] == 1) neighbors++;					 //  (2, 2)
+
+			if (field[x][y] == 0 && neighbors == 3) { // newborn
+				newField[x][y] = 1;
+				alive++;
+			} else if (field[x][y] == 1 && (neighbors == 2 || neighbors == 3)) { // still alive
+				newField[x][y] = 1;
+				alive++;
+			} else newField[x][y] = 0; // die
+		}
+	}
+
+	field = newField;
+
+	return alive;
+}
+
+int fieldAnalyse() { // TO OPTIMIZE
+	int alive = 0;
+	for (int y = 0; y < HEIGHT; y++) {
+		for (int x = 0; x < WIDTH; x++) {
+			int neighbors = field[(WIDTH + x - 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT]; // number of neighbors
+			neighbors += field[(WIDTH + x - 1) % WIDTH][y] + field[(WIDTH + x - 1) % WIDTH][(y + 1) % HEIGHT];
+			neighbors += field[x][(HEIGHT + y - 1) % HEIGHT] + field[x][(y + 1) % HEIGHT];
+			neighbors += field[(x + 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] + field[(x + 1) % WIDTH][y] + field[(x + 1) % WIDTH][(y + 1) % HEIGHT];
 
 			if (field[x][y] == 0 && neighbors == 3) { // newborn
 				newField[x][y] = 1;

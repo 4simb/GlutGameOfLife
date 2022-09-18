@@ -1,5 +1,6 @@
-change cells with mouse
 Optimize fieldAnalyse() (m.b. using threads)
 change field sizes from text fields
+add walls
 
+change cells with mouse -- DONE
 pause/unpause on space -- DONE
