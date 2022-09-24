@@ -20,7 +20,7 @@ float SPEED = 60.f;
 int WIDTH = 120;
 int HEIGHT = 39;
 
-int winWidth = 1900, winHeight = 980;
+int winWidth = 1200, winHeight = 900;
 
 int rightOffset = 250, downOffset = 30;
 
@@ -33,7 +33,7 @@ long int elapsedTime = 0;
 std::vector<float> FPSs;
 
 bool pause = false, lastPause = true;
-bool erase = false;
+bool erase = false, ctrl = false;
 
 std::vector<std::vector<char>> field(WIDTH + 1, std::vector<char>(HEIGHT + 1));
 std::vector<std::vector<char>> newField(WIDTH + 1, std::vector<char>(HEIGHT + 1));
@@ -74,15 +74,15 @@ void processNormalKeys(unsigned char key, int x, int y) {
 		//pause = !pause;
 	if (key == KEY_SPACE) {
 		pause = !pause;
-	} else if (key == 'x' || key == 'X') {
-		if (SPEED > 1) SPEED -= 1;
 	} else if (key == 'z' || key == 'Z') {
 		if (SPEED < 240) SPEED += 1;
+	} else if (key == 'x' || key == 'X') {
+		if (SPEED > 1) SPEED -= 1;
 	} else if (key == 'c' || key == 'C') {
 		// clear the whole field
 		for (int x = 0; x < WIDTH; x++) {
 			for (int y = 0; y < HEIGHT; y++) {
-				field[x][y] = 0;
+				field[x][y] = EMPTY;
 			}
 		}
 #ifdef DEBUG
@@ -95,16 +95,17 @@ void processMouse(int button, int state, int x, int y) {
 	if (button == GLUT_RIGHT_BUTTON) {
 		if (state == GLUT_DOWN) {
 			erase = true;
-
 			int fieldX = (float)x / gridSize;
 			int fieldY = (float)y / gridSize;
-			field[fieldX][fieldY] = 0;
+			field[fieldX][fieldY] = EMPTY;
 		} else erase = false;
 	} else if (button == GLUT_LEFT_BUTTON) {
 		if (state == GLUT_UP) {
+			int mod = glutGetModifiers();
 			int fieldX = (float)x / gridSize;
 			int fieldY = (float)y / gridSize;
-			field[fieldX][fieldY] = 1;
+			if (mod == GLUT_ACTIVE_CTRL) field[fieldX][fieldY] = WALL;
+			else field[fieldX][fieldY] = ALIVE;
 		}
 	}
 #ifdef DEBUG
@@ -123,12 +124,12 @@ void processMouseMotion(int x, int y) {
 	if (fieldX > WIDTH || fieldY > HEIGHT) return;
 	
 	if (erase) { // delete cells
-		field[fieldX][fieldY] = 0;
+		field[fieldX][fieldY] = EMPTY;
 #ifdef DEBUG
 		std::cout << "Erase cell " << fieldX << " " << fieldY << "\n";
 #endif
 	} else { // set cells
-		field[fieldX][fieldY] = 1;
+		field[fieldX][fieldY] = ALIVE;
 #ifdef DEBUG
 		std::cout << "Draw cell " << fieldX << " " << fieldY << "\n";
 #endif
@@ -227,6 +228,7 @@ void drawField() {
 
 			if (field[x][y]) {
 				glColor3f(0.5, 0.5, 0.5);
+				if (field[x][y] == WALL) glColor3f(0.2, 0.2, 0.2);
 				glBegin(GL_QUADS);
 				glPoint(((float)x + 0.1) * gridSize, ((float)y + 0.1) * gridSize);
 				glPoint(((float)x + 0.9) * gridSize, ((float)y + 0.1) * gridSize);
@@ -251,22 +253,22 @@ int oldFieldAnalyse() { // TO OPTIMIZE
 	for (int y = 0; y < HEIGHT; y++) {
 		for (int x = 0; x < WIDTH; x++) {
 			int neighbors = 0; // number of neighbors
-			if (field[(WIDTH + x - 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] == 1) neighbors++; //  (0, 0)
-			if (field[(WIDTH + x - 1) % WIDTH][y] == 1) neighbors++;						 //  (0, 1)
-			if (field[(WIDTH + x - 1) % WIDTH][(y + 1) % HEIGHT] == 1) neighbors++;			 //  (0, 2)
-			if (field[x][(HEIGHT + y - 1) % HEIGHT] == 1) neighbors++;						 //  (1, 0)
-			if (field[x][(y + 1) % HEIGHT] == 1) neighbors++;								 //  (1, 2)
-			if (field[(x + 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] == 1) neighbors++;		 //  (2, 0)
-			if (field[(x + 1) % WIDTH][y] == 1) neighbors++;								 //  (2, 1)
-			if (field[(x + 1) % WIDTH][(y + 1) % HEIGHT] == 1) neighbors++;					 //  (2, 2)
+			if (field[(WIDTH + x - 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] == ALIVE) neighbors++; //  (0, 0)
+			if (field[(WIDTH + x - 1) % WIDTH][y] == ALIVE) neighbors++;						 //  (0, 1)
+			if (field[(WIDTH + x - 1) % WIDTH][(y + 1) % HEIGHT] == ALIVE) neighbors++;			 //  (0, 2)
+			if (field[x][(HEIGHT + y - 1) % HEIGHT] == ALIVE) neighbors++;						 //  (1, 0)
+			if (field[x][(y + 1) % HEIGHT] == ALIVE) neighbors++;								 //  (1, 2)
+			if (field[(x + 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] == ALIVE) neighbors++;		 //  (2, 0)
+			if (field[(x + 1) % WIDTH][y] == ALIVE) neighbors++;								 //  (2, 1)
+			if (field[(x + 1) % WIDTH][(y + 1) % HEIGHT] == ALIVE) neighbors++;					 //  (2, 2)
 
-			if (field[x][y] == 0 && neighbors == 3) { // newborn
-				newField[x][y] = 1;
+			if (field[x][y] == EMPTY && neighbors == 3) { // newborn
+				newField[x][y] = ALIVE;
 				alive++;
-			} else if (field[x][y] == 1 && (neighbors == 2 || neighbors == 3)) { // still alive
-				newField[x][y] = 1;
+			} else if (field[x][y] == ALIVE && (neighbors == 2 || neighbors == 3)) { // still alive
+				newField[x][y] = ALIVE;
 				alive++;
-			} else newField[x][y] = 0; // die
+			} else newField[x][y] = EMPTY; // die
 		}
 	}
 
@@ -284,13 +286,13 @@ int fieldAnalyse() { // TO OPTIMIZE
 			neighbors += field[x][(HEIGHT + y - 1) % HEIGHT] + field[x][(y + 1) % HEIGHT];
 			neighbors += field[(x + 1) % WIDTH][(HEIGHT + y - 1) % HEIGHT] + field[(x + 1) % WIDTH][y] + field[(x + 1) % WIDTH][(y + 1) % HEIGHT];
 
-			if (field[x][y] == 0 && neighbors == 3) { // newborn
-				newField[x][y] = 1;
+			if (field[x][y] == EMPTY && neighbors == 3) { // newborn
+				newField[x][y] = ALIVE;
 				alive++;
-			} else if (field[x][y] == 1 && (neighbors == 2 || neighbors == 3)) { // still alive
-				newField[x][y] = 1;
+			} else if (field[x][y] == ALIVE && (neighbors == 2 || neighbors == 3)) { // still alive
+				newField[x][y] = ALIVE;
 				alive++;
-			} else newField[x][y] = 0; // die
+			} else newField[x][y] = EMPTY; // die
 		}
 	}
 
@@ -354,7 +356,7 @@ int main(int argc, char** argv) {
 	// Инициализация GLUT и создание окна
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(10, 80);
+	glutInitWindowPosition(10, 100);
 	glutInitWindowSize(winWidth, winHeight);
 	glutCreateWindow("LifeGame");
 

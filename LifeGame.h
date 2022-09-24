@@ -8,7 +8,7 @@
 
 // cells
 #define EMPTY 0
-#define CELL 1
+#define ALIVE 1
 #define WALL 2
 
 // special keys
