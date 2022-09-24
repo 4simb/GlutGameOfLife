@@ -44,7 +44,7 @@ std::string finishCode;
 std::chrono::high_resolution_clock::time_point timer_start, timer_end, step_time;
 
 void glPoint(float x, float y) {
-	glVertex3f(crdX(x), -crdY(y), -1);
+	glVertex3f(crdX(x, winWidth), -crdY(y, winHeight), -1);
 }
 
 void changeSize(int w, int h) {
@@ -136,21 +136,21 @@ void processMouseMotion(int x, int y) {
 }
 
 void drawString(float x, float y, float z, const char* string) {
-	glRasterPos3f(crdX(x), crdY(y), z);
+	glRasterPos3f(crdX(x, winWidth), crdY(y, winHeight), z);
 	for (const char* c = string; *c != '\0'; c++) {
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);  // Updates the position
 	}
 }
 
 void drawString(float x, float y, float z, char* string) {
-	glRasterPos3f(crdX(x), crdY(y), z);
+	glRasterPos3f(crdX(x, winWidth), crdY(y, winHeight), z);
 	for (char* c = string; *c != '\0'; c++) {
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);  // Updates the position
 	}
 }
 
 void drawString(float x, float y, float z, std::string string) {
-	glRasterPos3f(crdX(x), crdY(y), z);
+	glRasterPos3f(crdX(x, winWidth), crdY(y, winHeight), z);
 	for (int c = 0; string[c] != '\0'; c++) {
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, string[c]);  // Updates the position
 	}
