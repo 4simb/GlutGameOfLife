@@ -1,4 +1,7 @@
-// CREDITS: 
+//  BMP.h
+//  4simb
+// 
+//  CREDITS: 
 // https://solarianprogrammer.com/2018/11/19/cpp-reading-writing-bmp-images/
 // https://github.com/sol-prog/cpp-bmp-images
 

@@ -1,4 +1,6 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+﻿//main.cpp
+
+#define _CRT_SECURE_NO_WARNINGS
 //#define DEBUG
 
 #include <iostream>
@@ -229,7 +231,7 @@ void setup() {
 		std::cout << err.what() << '\n';
 		glutDestroyWindow(1);
 	}
-
+	
 	timer_start = timer_end = step_time = std::chrono::high_resolution_clock::now();
 }
 
