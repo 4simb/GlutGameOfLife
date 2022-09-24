@@ -1,4 +1,5 @@
 Optimize fieldAnalyse() (m.b. using threads)
+add bit mask (to optimize fieldAnalyse by not proccessing empty cells w 0 neighbours)
 change field sizes from text fields
 add walls
 

@@ -1,7 +1,7 @@
-﻿//main.cpp
+﻿//	main.cpp
+//	4simb
 
 #define _CRT_SECURE_NO_WARNINGS
-//#define DEBUG
 
 #include <iostream>
 #include <chrono>
@@ -10,13 +10,9 @@
 #include <Windows.h>
 #include <GL/glut.h>  // GLUT, include glu.h and gl.h
 #include "BMP.h"
+#include "LifeGame.h"
 
-//#define DELAY 1
-#define KEY_SPACE 32
-#define KEY_ESC 27
-#define KEY_ENTER 13
-
-#define PATH "img.bmp"
+//#define DEBUG
 
 float distance = -100.f;
 
@@ -39,37 +35,16 @@ std::vector<float> FPSs;
 bool pause = false, lastPause = true;
 bool erase = false;
 
-std::vector<std::vector<bool>> field(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-std::vector<std::vector<bool>> newField(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+std::vector<std::vector<char>> field(WIDTH + 1, std::vector<char>(HEIGHT + 1));
+std::vector<std::vector<char>> newField(WIDTH + 1, std::vector<char>(HEIGHT + 1));
 
 std::string name = PATH;
 std::string finishCode;
 
 std::chrono::high_resolution_clock::time_point timer_start, timer_end, step_time;
 
-float map(float x, float in_min, float in_max, float out_min, float out_max) {
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-float crdX(float coord) {
-	return map(coord, 0, winWidth, -1, 1);
-}
-
-float crdY(float coord) {
-	return map(coord, 0, winHeight, -1, 1);
-}
-
 void glPoint(float x, float y) {
 	glVertex3f(crdX(x), -crdY(y), -1);
-}
-
-template<typename T>
-float sum(T const& xs) {
-	float s = 0.f;
-	for (auto const& x : xs) {
-		s += x;
-	}
-	return s;
 }
 
 void changeSize(int w, int h) {
@@ -211,8 +186,8 @@ void setup() {
 		img.close();
 		std::cout << "Import is completed.\n";
 
-		field = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
-		newField = std::vector<std::vector<bool>>(WIDTH + 1, std::vector<bool>(HEIGHT + 1));
+		field = std::vector<std::vector<char>>(WIDTH + 1, std::vector<char>(HEIGHT + 1));
+		newField = std::vector<std::vector<char>>(WIDTH + 1, std::vector<char>(HEIGHT + 1));
 
 		//*
 		for (int y = HEIGHT - 1; y >= 0; y--) {
